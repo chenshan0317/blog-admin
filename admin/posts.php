@@ -92,9 +92,6 @@ where {$where}";
 $count=findOneData($countSql)['count'];
 $offset=($current_p-1)*$size;
 
-
-
-
 if($_SERVER['REQUEST_METHOD']==='GET'){
   
   if(isset($_GET['posts'])&&$_GET['posts']=='del'){

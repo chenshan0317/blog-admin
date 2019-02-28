@@ -122,30 +122,27 @@ $current_page=getCurrentPage();
             <th class="text-center" width="100">操作</th>
           </tr>
         </thead>
-        <tbody>
-        <script type="text/x-jsrender" id="tmpl" >
-        {{each comments as item i}}
-          <tr {{if item.status=='approved'}} class='success'
-           {{else item.status=='rejected'}} class='danger'
-           {{/if}}
-          data-id={{item.id}}>
-                <td class="text-center"><input type="checkbox"></td>
-                <td>{{item.author}}</td>
-                <td>{{item.content}}</td>
-                <td>{{item.title}}</td>
-                <td>{{item.created}}</td>
-                <td>{{item.status}}</td>
-                <td class="text-center" style="width:150px;">
-                  <a href="post-add.html" class="btn btn-info btn-xs">批准</a>
-                  <a href="post-add.html" class="btn btn-warning btn-xs">驳回</a>
-                  <a href="javascript:;" class="btn btn-danger btn-xs btn-delete">删除</a>
-                </td>
-            </tr>
-        {{/each}}
-        </script>
-          
-          
-         
+        <tbody id='content'>
+          <script type="text/x-art-template" id="tmpl" >
+          {{each comments as item i}}
+            <tr {{if item.status=='approved'}} class='success'
+            {{else item.status=='rejected'}} class='danger'
+            {{/if}}
+            data-id={{item.id}}>
+                  <td class="text-center"><input type="checkbox"></td>
+                  <td>{{item.author}}</td>
+                  <td>{{item.content}}</td>
+                  <td>{{item.title}}</td>
+                  <td>{{item.created}}</td>
+                  <td>{{item.status}}</td>
+                  <td class="text-center" style="width:150px;">
+                    <a href="post-add.html" class="btn btn-info btn-xs">批准</a>
+                    <a href="post-add.html" class="btn btn-warning btn-xs">驳回</a>
+                    <a href="javascript:;" class="btn btn-danger btn-xs btn-delete">删除</a>
+                  </td>
+              </tr>
+          {{/each}}
+          </script>
         </tbody>
       </table>
     </div>
@@ -160,8 +157,8 @@ $current_page=getCurrentPage();
   
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
-  <script src="/static/assets/vendors/art-template/template-web.js"></script>
   <script src="/static/assets/vendors/twbs-pagination/jquery.twbsPagination.js"></script>
+  <script src="/static/assets/vendors/art-template/template-web.js"></script>
   <script>NProgress.done()</script>
   <script>
   // nprogress
@@ -174,56 +171,86 @@ $current_page=getCurrentPage();
       NProgress.done();
       $('#loading').css('display','none');
 })
-  var current_p=1
-  function loadPageData(page){
-    // $('tbody').fadeOut();
+
+//其实这样就可以了，但是页码总页数要获取
+// function loadPageData(page){
+//     $.get('/admin/api/comments.php',{current_p:page},function(res){
+//       var html = template('tmpl',{comments:res});
+//       $('tbody').html(html);
+//     })
+// }
+
+// $.get('/admin/api/comments.php',{},function(res){
+//       $('#pagination-demo').twbsPagination({
+//             totalPages: 100,
+//             visiblePages: 7,
+//             // initiateStartPageClick:false,
+//             //第一次初始化时就会出发
+//             onPageClick: function (event, p) {
+//                 loadPageData(p);
+//             }
+//         });
+// })
+//重新来，art-template模板引擎  twbs-pagination分页组件
+/**
+思路：
+分页组件第一次初始化会触发，触发后执行loadPageData()
+由于分页组件不能重新渲染，所以要先destroy原先产生的分页，再重新生成分页
+至于为什么要这么做，为拿到res.count
+
+如果删掉第七页的数据，页码应该调到第6页
+ */
+var current_p=1;
+function loadPageData(page){
+    $('tbody').fadeOut();
     $.get('/admin/api/comments.php',{current_p:page},function(res){
-        // $('#pagination-demo').twbsPagination('destroy');
-        $('#pagination-demo').twbsPagination({
+      console.log(page)
+      console.log(res.count)
+      if(page>res.count){loadPageData(res.count);return;}
+      $('#pagination-demo').twbsPagination('destroy');
+      $('#pagination-demo').twbsPagination({
             totalPages: res.count,
             visiblePages: 7,
+            startPage:page,
             initiateStartPageClick:false,
-            // $(this).twbsPagination('destroy');
-            //第一次初始化时就会出发
-            onPageClick: function (event, page) {
-                loadPageData(page);
-                current_p=page;
+            onPageClick: function (event, p) {
+              loadPageData(p);
+              current_p=page;
             }
         });
-        
-        //渲染数据
-        var html = template('tmpl',{comments:res.allComments});
-        $('tbody').html(html);        
-      })
-  }
+      var html = template('tmpl',{comments:res.allComments});
+      $('tbody').html(html).fadeIn();
+    })
+}
 
- $.get('/admin/api/comments.php',{},function(res){
- 
-        $('#pagination-demo').twbsPagination({
-              totalPages: 100,
-              visiblePages: 7,
-              // initiateStartPageClick:false,
-              //第一次初始化时就会出发
-              onPageClick: function (event, p) {
-                console.log(p);
-                  loadPageData(p);
-                  // current_p=page;
-              }
-          });
-  })
- 
+$.get('/admin/api/comments.php',{},function(res){
+      $('#pagination-demo').twbsPagination({
+            totalPages: 100,
+            visiblePages: 7,
+            // initiateStartPageClick:false,
+            //第一次初始化时就会出发
+            onPageClick: function (event, p) {
+                loadPageData(p);
+            }
+        });
+})
 
-//删除用事件委托
- $('tbody').on('click','.btn-delete',function(){
-   var id=$(this).parent().parent().data('id');
-   var $str=$(this).parent().parent();
-   $.get('/admin/api/comments-delete.php',{id:id},function(res){
-     if(!res) return;
-     //重新载入页面
-     loadPageData(current_p);
-      // $str.remove();
-   })
- })
+//ajax删除
+/**
+因为数据是动态加入的，每一个删除按钮上放一个时间效率问题
+委托
+ */
+$('tbody').on('click','.btn-delete',function(){
+  var id=$(this).parent().parent().data('id');
+  $.get('/admin/api/comments-delete.php',{id:id},function(res){
+    if(!res) return;
+    //重新载入当前页的数据
+    loadPageData(current_p);
+  })  
+})
+
+
+  
   </script>
 </body>
 </html>
