@@ -40,7 +40,7 @@ $current_page=getCurrentPage();
             <input id="site_logo" name="site_logo" type="hidden">
             <label class="form-image">
               <input id="logo" type="file">
-              <img src="/static/assets/img/logo.png">
+              <img src="/static/assets/img/default.png">
               <i class="mask fa fa-upload"></i>
             </label>
           </div>
@@ -88,5 +88,20 @@ $current_page=getCurrentPage();
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
   <script>NProgress.done()</script>
+  <script>
+  /**
+  1.自定义无法修改样式的组件（间接修改）
+  <input type="radio" class="radio1">
+  <i>.</i>
+
+  先让radio隐藏display:none,用label标签把radio和标签包在一起，这样点击i标签，radio就会被选中和不选中
+  （也可以不用label，这样把input的opacity:0,定位平铺到i上面）
+  接着让radio选中时，旁边的i一个状态    .radio1:checked+i{}  +对应一个，~对应多个
+  radio不选中时，旁边的i另一个状态  .radio1+i::after{} 也可以用伪元素给i加内容
+  
+  2.平常图片的提交，都是form表单提交,设置encty...  这里用ajax
+   */
+  
+  </script>
 </body>
 </html>

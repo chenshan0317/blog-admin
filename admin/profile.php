@@ -35,6 +35,7 @@
             <label class="form-image">
               <input id="avatar" type="file">
               <img src="/static/assets/img/default.png">
+              <input type="hidden" name="avatar">
               <i class="mask fa fa-upload"></i>
             </label>
           </div>
@@ -81,5 +82,30 @@
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
   <script>NProgress.done()</script>
+  <script>
+  $('#avatar').on('change',function(){
+    var $img=$(this);
+    //当文件选中状态发生变化，会执行这个事件处理函数
+    //判断是否选中了文件
+    var files=$(this).prop('files');
+    if(!files.length) return;
+    //拿到上传的文件
+    var file=files[0];
+
+    //FormData是html5新增成员，配合ajax使用，用于客户端与服务端二进制数据传递
+    var data=new FormData();
+    data.append('avatar',file);//提交的键和值
+
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','/admin/api/upload.php');
+    xhr.send(data);
+
+    xhr.onload=function(){
+      // console.log(this.responseText);
+      $img.siblings('img').attr('src',this.reponseText);//到时候提交的时候是提交的图片路径到服务端
+      $img.siblings('input').val(this.responseText);
+    }
+  })
+  </script>
 </body>
 </html>
