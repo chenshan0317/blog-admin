@@ -122,26 +122,26 @@ $current_page=getCurrentPage();
             <th class="text-center" width="100">操作</th>
           </tr>
         </thead>
-        <tbody id='content'>
+        <tbody>
         <script type="text/x-jsrender" id="tmpl" >
-        {{for comments}}
-          <tr {{if status=='approved'}} class='success'
-           {{else status=='rejected'}} class='danger'
+        {{each comments as item i}}
+          <tr {{if item.status=='approved'}} class='success'
+           {{else item.status=='rejected'}} class='danger'
            {{/if}}
-          data-id={{:id}}>
+          data-id={{item.id}}>
                 <td class="text-center"><input type="checkbox"></td>
-                <td>{{:author}}</td>
-                <td>{{:content}}</td>
-                <td>{{:title}}</td>
-                <td>{{:created}}</td>
-                <td>{{:status}}</td>
+                <td>{{item.author}}</td>
+                <td>{{item.content}}</td>
+                <td>{{item.title}}</td>
+                <td>{{item.created}}</td>
+                <td>{{item.status}}</td>
                 <td class="text-center" style="width:150px;">
                   <a href="post-add.html" class="btn btn-info btn-xs">批准</a>
                   <a href="post-add.html" class="btn btn-warning btn-xs">驳回</a>
                   <a href="javascript:;" class="btn btn-danger btn-xs btn-delete">删除</a>
                 </td>
             </tr>
-        {{/for}}
+        {{/each}}
         </script>
           
           
@@ -160,9 +160,8 @@ $current_page=getCurrentPage();
   
   <script src="/static/assets/vendors/jquery/jquery.js"></script>
   <script src="/static/assets/vendors/bootstrap/js/bootstrap.js"></script>
+  <script src="/static/assets/vendors/art-template/template-web.js"></script>
   <script src="/static/assets/vendors/twbs-pagination/jquery.twbsPagination.js"></script>
-
-  <script src="/static/assets/vendors/jsrender/jsrender.js"></script>
   <script>NProgress.done()</script>
   <script>
   // nprogress
@@ -175,48 +174,56 @@ $current_page=getCurrentPage();
       NProgress.done();
       $('#loading').css('display','none');
 })
-
-window.onload({
   var current_p=1
   function loadPageData(page){
-    $.getJSON('/admin/api/comments.php',{current_p:page},function(res){
-       
-       $('#pagination-demo').twbsPagination('destroy')
-
-       $('#pagination-demo').twbsPagination({
-            totalPages: 100,
+    // $('tbody').fadeOut();
+    $.get('/admin/api/comments.php',{current_p:page},function(res){
+        // $('#pagination-demo').twbsPagination('destroy');
+        $('#pagination-demo').twbsPagination({
+            totalPages: res.count,
             visiblePages: 7,
             initiateStartPageClick:false,
+            // $(this).twbsPagination('destroy');
             //第一次初始化时就会出发
-            onPageClick: function (event, p) {
-              console.log(p);
-                loadPageData(p);
-                // current_p=page;
+            onPageClick: function (event, page) {
+                loadPageData(page);
+                current_p=page;
             }
         });
-       var html1=$('#tmpl').render({comments:res});
-       console.log(html1)
-       $('#content').html(html1);
-      //  $('tbody').empty().append(html1);
-      })
         
+        //渲染数据
+        var html = template('tmpl',{comments:res.allComments});
+        $('tbody').html(html);        
+      })
   }
 
-  
-  $('#pagination-demo').twbsPagination({
-            totalPages: 100,
-            visiblePages: 7,
-            // initiateStartPageClick:false,
-            //第一次初始化时就会出发
-            onPageClick: function (event, p) {
-              console.log(p);
-                loadPageData(p);
-                // current_p=page;
-            }
-        });
+ $.get('/admin/api/comments.php',{},function(res){
+ 
+        $('#pagination-demo').twbsPagination({
+              totalPages: 100,
+              visiblePages: 7,
+              // initiateStartPageClick:false,
+              //第一次初始化时就会出发
+              onPageClick: function (event, p) {
+                console.log(p);
+                  loadPageData(p);
+                  // current_p=page;
+              }
+          });
+  })
+ 
 
-})
-  
+//删除用事件委托
+ $('tbody').on('click','.btn-delete',function(){
+   var id=$(this).parent().parent().data('id');
+   var $str=$(this).parent().parent();
+   $.get('/admin/api/comments-delete.php',{id:id},function(res){
+     if(!res) return;
+     //重新载入页面
+     loadPageData(current_p);
+      // $str.remove();
+   })
+ })
   </script>
 </body>
 </html>

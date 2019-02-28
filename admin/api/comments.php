@@ -17,11 +17,10 @@ $allCount=findOneData($countSql)['count'];
 $count=(int)ceil($allCount/$size);
 //因为网络传输只能是字符串
 //所以要将数据转换成字符串（序列化）
-// $comments=json_encode(array(
-//     'count'=>$count,
-//     'allComments'=>$allComments
-// ));
-$comments=json_encode($allComments);
+$comments=json_encode(array(
+    "count"=>$count,
+    "allComments"=>$allComments
+));
 header('Content-Type:application/json');
 echo $comments;
 ?>
