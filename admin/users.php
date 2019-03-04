@@ -1,6 +1,69 @@
 <?php 
 require_once '../func.php';
 $current_page=getCurrentPage();
+function showAllUsers(){
+  $sql="select * from users";
+  $user_arr=findAllData($sql);
+  return $user_arr;
+}
+function addOneUser(){
+  if(empty($_POST['email'])||empty($_POST['slug'])||empty($_POST['nickname'])||empty($_POST['password'])){
+    $GLOBALS['err']="输入项有空置，重新输入";
+    return;
+  }
+  $email=$_POST['email'];
+  $slug=$_POST['slug'];
+  $nickname=$_POST['nickname'];
+  $password=$_POST['password'];
+  $sql="insert into users values (null,'{$email}','{$slug}','{$nickname}','{$password}',null,null,'activated')";
+  return updateOneData($sql);
+}
+
+function editUser(){
+  // $id_arr=explode('=',$_SERVER['QUERY_STRING']);
+  // $id=$id_arr[2];
+  global $current_use;
+  $id=$_GET['id'];
+  $current_use=findOneData('select * from users where id = ' .$id);
+  if(empty($_POST['email'])||empty($_POST['slug'])||empty($_POST['nickname'])||empty($_POST['password'])){
+    $GLOBALS['err']='修改失败，某一项值为空';
+    exit();
+  }
+
+  if($current_use['email']===$_POST['email']&&$current_use['password']===$_POST['password']&&$current_use['nickname']===$_POST['nickname']&&$current_use['slug']===$_POST['slug']){
+    //没有修改
+    $GLOBALS['err']='没有发生修改';
+    return;
+  }
+  $email=$_POST['email'];
+  $slug=$_POST['slug'];
+  $nickname=$_POST['nickname'];
+  $password=$_POST['password'];
+  $editUser_sql="update users set slug = '{$slug}', email = '{$email}',nickname='{$nickname}',password='{$password}' where id = {$id}";
+  updateOneData($editUser_sql);
+  $GLOBALS['err']='修改成功';
+  header("Location:/admin/users.php");
+}
+
+if(isset($_GET['id'])){
+  //编辑主线
+  $current_use=findOneData("select * from users where id='{$_GET['id']}'");
+  if($_SERVER['REQUEST_METHOD']==='POST'){
+    editUser();
+  }
+}else{
+  //添加主线
+  if($_SERVER['REQUEST_METHOD']=="POST"){
+    $result=addOneUser();
+    if($result==-1){
+      $GLOBALS['err']="添加失败";
+      return;
+    }
+}
+}
+
+
+$users=showAllUsers();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -29,29 +92,32 @@ $current_page=getCurrentPage();
         <h1>用户</h1>
       </div>
       <!-- 有错误信息时展示 -->
-      <!-- <div class="alert alert-danger">
-        <strong>错误！</strong>发生XXX错误
-      </div> -->
+       <?php if(isset($GLOBALS['err'])):?>
+      <!-- 有错误信息时展示 -->
+        <div class="alert alert-danger">
+          <strong>information！</strong><?php echo $GLOBALS['err'];?>
+        </div>
+      <?php endif ?>
       <div class="row">
         <div class="col-md-4">
-          <form>
+          <form method="POST" action="<?php echo $_SERVER['PHP_SELF'];?><?php echo isset($current_use)?"?id='{$current_use['id']}'":'';?>">
             <h2>添加新用户</h2>
             <div class="form-group">
               <label for="email">邮箱</label>
-              <input id="email" class="form-control" name="email" type="email" placeholder="邮箱">
+              <input id="email" class="form-control" name="email" type="email" placeholder="邮箱" value="<?php echo isset($current_use)?$current_use['email']:'';?>">
             </div>
             <div class="form-group">
               <label for="slug">别名</label>
-              <input id="slug" class="form-control" name="slug" type="text" placeholder="slug">
+              <input id="slug" class="form-control" name="slug" type="text" placeholder="slug" value="<?php echo isset($current_use)?$current_use['slug']:'';?>">
               <p class="help-block">https://zce.me/author/<strong>slug</strong></p>
             </div>
             <div class="form-group">
               <label for="nickname">昵称</label>
-              <input id="nickname" class="form-control" name="nickname" type="text" placeholder="昵称">
+              <input id="nickname" class="form-control" name="nickname" type="text" placeholder="昵称" value="<?php echo isset($current_use)?$current_use['nickname']:'';?>">
             </div>
             <div class="form-group">
               <label for="password">密码</label>
-              <input id="password" class="form-control" name="password" type="text" placeholder="密码">
+              <input id="password" class="form-control" name="password" type="text" placeholder="密码" value="<?php echo isset($current_use)?$current_use['password']:'';?>">
             </div>
             <div class="form-group">
               <button class="btn btn-primary" type="submit">添加</button>
@@ -76,42 +142,20 @@ $current_page=getCurrentPage();
               </tr>
             </thead>
             <tbody>
+            <?php foreach($users as $item):?>
               <tr>
                 <td class="text-center"><input type="checkbox"></td>
-                <td class="text-center"><img class="avatar" src="/static/assets/img/default.png"></td>
-                <td>i@zce.me</td>
-                <td>zce</td>
-                <td>汪磊</td>
-                <td>激活</td>
+                <td class="text-center"><img class="avatar" src="<?php echo $item['avatar'];?>"></td>
+                <td><?php echo $item['email'];?></td>
+                <td><?php echo $item['slug'];?></td>
+                <td><?php echo $item['nickname'];?></td>
+                <td><?php echo $item['status'];?></td>
                 <td class="text-center">
-                  <a href="post-add.php" class="btn btn-default btn-xs">编辑</a>
-                  <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
+                  <a href="?id=<?php echo $item['id'];?>" class="btn btn-default btn-xs">编辑</a>
+                  <a href="/admin/api/user-delete.php?id=<?php echo $item['id'];?>" class="btn btn-danger btn-xs btn-delete">删除</a>
                 </td>
               </tr>
-              <tr>
-                <td class="text-center"><input type="checkbox"></td>
-                <td class="text-center"><img class="avatar" src="/static/assets/img/default.png"></td>
-                <td>i@zce.me</td>
-                <td>zce</td>
-                <td>汪磊</td>
-                <td>激活</td>
-                <td class="text-center">
-                  <a href="post-add.php" class="btn btn-default btn-xs">编辑</a>
-                  <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
-                </td>
-              </tr>
-              <tr>
-                <td class="text-center"><input type="checkbox"></td>
-                <td class="text-center"><img class="avatar" src="/static/assets/img/default.png"></td>
-                <td>i@zce.me</td>
-                <td>zce</td>
-                <td>汪磊</td>
-                <td>激活</td>
-                <td class="text-center">
-                  <a href="post-add.php" class="btn btn-default btn-xs">编辑</a>
-                  <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
-                </td>
-              </tr>
+            <?php endforeach?>
             </tbody>
           </table>
         </div>
