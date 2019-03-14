@@ -39,5 +39,8 @@ getSessionUser();
           <li class=<?php echo $current_page==='settings.php'?' active':"";?>><a href="/admin/settings.php">网站设置</a></li>
         </ul>
       </li>
+      <li class=<?php echo $current_page==='douban.php'?' active':"";?>>
+        <a href="/admin/douban.php"><i class="fa fa-users"></i>豆瓣</a>
+      </li>
     </ul>
   </div>
